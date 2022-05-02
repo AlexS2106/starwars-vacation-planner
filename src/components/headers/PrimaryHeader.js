@@ -3,7 +3,8 @@ import React from "react";
 const PrimaryHeader = () => { 
   return (
     <header>
-      <h1>Planet Visitation Scheduler</h1>
+      <h1>Yoda's Interstellar Vacations</h1>
+      <h2>For Jedis and Padawans only!</h2>
     </header>
   );
 }

@@ -1,15 +1,16 @@
 import React from "react";
-import styled from 'styled-components'
+import styled from "styled-components";
 
-const Button = (props) => {
-  const Button = styled.button`
-  backgroundColor: pink,
-  padding: 1rem,
-  `;
+const StyledButton = styled.button`
+background-color: pink;
+padding: 1rem;
+`;
 
+const Button = ( props ) => {
+  
   return (
-    <Button onClick={ props.onClick }> Click here</Button>
-  )
+    <StyledButton onClick={ props.onClick }>{ props.btnText }</StyledButton>
+  );
 }
 
 export default Button;
