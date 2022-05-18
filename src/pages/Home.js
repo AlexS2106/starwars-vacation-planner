@@ -1,21 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import Button from "../components/buttons/Button";
-import CompanionCarousel from "../components/carousels/CompanionCarousel";
-import CompanionInformation from "../components/display/CompanionInformation";
-import PlanetaryCarousel from "../components/carousels/PlanetaryCarousel";
-import PlanetInformation from "../components/display/PlanetInformation";
+import Carousel from "../components/carousels/lists/Carousel";
+import FullImageBg from "../components/display/bgs/FullImageBg";
+import InformationClip from "../components/carousels/clips/InformationClip";
+import Navbar from "../components/navbars/Navbar";
 import PrimaryHeader from "../components/headers/PrimaryHeader";
 import PrimaryFooter from "../components/footers/PrimaryFooter";
-import StarshipCarousel from "../components/carousels/StarshipCarousel";
-import StarshipInformation from "../components/display/StarshipInformation";
+import Spacer from "../components/layout/Spacer";
+import Spinner from "../components/spinners/Spinner";
+import { StyledLargeContainer } from "../components/layout/Containers.styled";
+import { StyledP } from "../components/display/typography/Typography.styled";
+import TextButton from "../components/buttons/TextButton";
 
-import { baseURL } from "../utilities/baseURL";
+import { resultsCaller } from "../api/fetch.api";
 
+////** COMPONENTS **////
 const Home = () => {
+////** HOOKS  **////
   let navigate = useNavigate();
-  ////** STATE **////
+  ////** STATE & CONTEXT **////
   //Loading
   const [ isLoading, setIsLoading ] = useState( false );
   //Use choice of one destination
@@ -48,8 +52,8 @@ const Home = () => {
         modeOfTravel: false,
         companion: false,
       } );
-      const response = await fetch( `${ baseURL }/planets` );
-      const { results } = await response.json();
+      const callEndpoint = `planets`;
+      const results = await resultsCaller(callEndpoint);
       const planets = results.map( result => result );
       setPlanets( planets );
       setIsLoading( false );
@@ -59,127 +63,107 @@ const Home = () => {
 //Fetches all data from SWAPI based on an arg
   async function fetchHandler ( whatToFetch ) { 
     let endpoint;
-    if ( whatToFetch === planets ) { endpoint = "planets" }
-    if ( whatToFetch === starships ) { endpoint = "starships" }
-    if ( whatToFetch === companions ) { endpoint = "people" }
-    const response = await fetch( `${ baseURL }/${ endpoint }` );
-    const { results } = await response.json();
+    if ( whatToFetch === "destination" ) { endpoint = `planets` }
+    if ( whatToFetch === "modeOfTravel" ) { endpoint = `starships` }
+    if ( whatToFetch === "companion" ) { endpoint = `people` }
+    const results = await resultsCaller(endpoint);
     const resultsArray = results.map( result => result );
-    if ( whatToFetch === planets ) { setPlanets( resultsArray ) };
-    if ( whatToFetch === starships ) { setStarships( resultsArray ) };
-    if ( whatToFetch === companions ) { setCompanions( resultsArray ) };
+    if ( whatToFetch === "destination" ) { setPlanets( resultsArray ) };
+    if ( whatToFetch === "modeOfTravel" ) { setStarships( resultsArray ) };
+    if ( whatToFetch === "companion" ) { setCompanions( resultsArray ) };
 
   }
     //Awaits user clicking on a photo, displays more about the chosen photo and adds the information on what is chosen to holiday state
   function photoClickedHandler ( e ) {
-        setIsLoading( true );
-    const chosenStarship = starships.filter( starship => starship.name === e );
-    const chosenCompanion = companions.filter( companion => companion.name === e );
-    const chosenPlanet = planets.filter( planet => planet.name === e );
-    if ( chosenPlanet.length ) {
-      setHoliday( ( prevValues ) => ( {
-        ...prevValues,
-        destination: chosenPlanet[ 0 ],
+    setIsLoading( true );
+    console.log(e)
+    setHoliday( ( prevValues ) => ( {
+      ...prevValues,
+        [ e.is ]: e,
       } ) );
-    } else if ( chosenStarship.length ) {
-      setHoliday( ( prevValues ) => ( {
-        ...prevValues,
-        modeOfTravel: chosenStarship[ 0 ]
-      } ) );
-    } else if ( chosenCompanion.length ) {
-      setHoliday( ( prevValues ) => ( {
-        ...prevValues,
-        companion: chosenCompanion[ 0 ]
-      } ) );
-    } else { 
-      const err = new Error( "photo clicked handler error" );
-      console.log( err );
-    }
-        setIsLoading( false );
+    setIsLoading( false );
   };
   //Acts on the user confirmation of various stages of the holiday and brings in more data apprpriate to the stage
   async function confirmationHandler ( value ) { 
     setIsLoading( true );
-    if ( value === "destination" ) {
-      fetchHandler( starships );
-      setIsConfirmed( (prevValues) => ( {
-        ...prevValues,
-        destination: true,
-      } ) );
-    } else if ( value === "modeOfTravel" ) {
-      fetchHandler( companions );
-      setIsConfirmed( (prevValues) => ( {
-        ...prevValues,
-        modeOfTravel: true,
-      } ) );
-    } else if ( value === "companion" ) {
-      fetchHandler( companions );
-      setIsConfirmed( (prevValues) => ( {
-        ...prevValues,
-        companion: true,
-      } ) );
-    } else { 
-      const err = new Error( "confirmationhandler error" );
-      console.log( err );
-    }
+    const values = [ "destination", "modeOfTravel", "companion" ];
+    const num = values.indexOf( value );
+    setIsConfirmed( (prevValues) => ( {
+      ...prevValues,
+      [values[num]]: true,
+    } ) );
+    fetchHandler( values[ num + 1 ] );
     setIsLoading( false );
   }
 
   function confirmedAllHandler () {
-   navigate("holiday")
-   }
-
-  const loader = <p>Using the force...</p>
+    navigate( "holiday" );
+  }
 
   return (
-    <>
+    <StyledLargeContainer>
+      <FullImageBg />
+      <Navbar />
       <PrimaryHeader />
+      <Spacer size={ 3 } />
+      { isLoading ? <Spinner /> : null }
 
-      { isLoading ? loader : null }
-
-      <h3>Your next vacation. Choose your planet, you will?</h3>
       {/*Initial start with all planets showing*/ }
-      <PlanetaryCarousel planetList={ planets.map( planet => planet.name ) } onClick={ photoClickedHandler } />
+      { Object.keys( holiday.destination ).length === 0 ?
+        ( <>
+          <Carousel list={ planets } onClick={ photoClickedHandler } />
+          <Spacer size={ 1 } />
+          <StyledP>Your destination, choose wisely you must.</StyledP>
+        </> ) : null }
 
       {/*Choose a planet*/ }
-      { Object.keys( holiday.destination ).length !== 0 ? <PlanetInformation planet={ holiday.destination } /> : null }
+      { Object.keys( holiday.destination ).length !== 0 ?
+        ( <>
+          <InformationClip clip={ holiday.destination } />
+          <Spacer size={ 3 } />
+          </> ) : null }
 
       {/*Confirm the planet*/ }
       { Object.keys( holiday.destination ).length !== 0 && !isConfirmed.destination ?
-        <Button onClick={ () => confirmationHandler("destination") } btnText={ `Confirm ${ holiday.destination.name } planet, would you like?` } /> : null }
+        (
+          <>
+            <TextButton onClick={ () => confirmationHandler( "destination" ) } btnText={ `Confirm ${ holiday.destination.name } planet, would you like?` } /> 
+            <Spacer size={ 3 } />
+          </> ) : null }
       
       {/*Planet confirmed, show all starships*/ }
       { starships.length !== 0 ?
         ( <>
-          <h3>Your way to get there, choose you will.</h3>
-          <StarshipCarousel starshipList={ starships.map( starship => starship.name ) } onClick={ photoClickedHandler } />
+          <StyledP>How to get there, choose your own way, you will.</StyledP>
+          <Spacer size={ 2 } />
+          <Carousel list={ starships } onClick={ photoClickedHandler } />
         </> ) : null }
       
       {/*Choose a starship*/ }
-      { Object.keys( holiday.modeOfTravel ).length !== 0 ? <StarshipInformation starship={ holiday.modeOfTravel } /> : null }
+      { Object.keys( holiday.modeOfTravel ).length !== 0 ? <InformationClip starship={ holiday.modeOfTravel } /> : null }
 
       {/*Confirm the starship*/ }
       { Object.keys( holiday.modeOfTravel ).length !== 0 && !isConfirmed.modeOfTravel ?
-        <Button onClick={ () => confirmationHandler("modeOfTravel") } btnText={ `Confirm ${ holiday.modeOfTravel.name } starship, would you like?` } /> : null }
+        <TextButton onClick={ () => confirmationHandler( "modeOfTravel" ) } btnText={ `Confirm ${ holiday.modeOfTravel.name } starship, would you like?` } /> : null }
       
       {/*Starship confirmed, show companions*/ }
-      { companions.length !== 0 ? <CompanionCarousel companionList={ companions.map( companion => companion.name ) } onClick={ photoClickedHandler } /> : null }
+      { companions.length !== 0 ? <Carousel companionList={ companions } onClick={ photoClickedHandler } /> : null }
 
       {/*Choose a companion*/ }
-      { Object.keys( holiday.companion ).length !== 0 ? <CompanionInformation companion={ holiday.companion } /> : null }
+      { Object.keys( holiday.companion ).length !== 0 ? <InformationClip companion={ holiday.companion } /> : null }
       
       {/*Confirm the companion*/ }
-      { Object.keys( holiday.companion ).length !== 0 && !isConfirmed.companion ? <Button onClick={ () => confirmationHandler("companion") } btnText={ `Confirm ${ holiday.companion.name } as your companion, would you like?` } /> : null }
+      { Object.keys( holiday.companion ).length !== 0 && !isConfirmed.companion ? <TextButton onClick={ () => confirmationHandler( "companion" ) } btnText={ `Confirm ${ holiday.companion.name } as your companion, would you like?` } /> : null }
       
       {/*Planet, starship and companion chosen - request user's final confirmation*/ }
       { isConfirmed.destination && isConfirmed.modeOfTravel && isConfirmed.companion ?
         ( <>
-          <p>Chosen you have { holiday.destination.name }, travel you will { holiday.modeOfTravel.name }, companion you will with { holiday.companion.name }</p>
-          <Button onClick={ confirmedAllHandler } btnText="Confirm all, you will?" />
+          <StyledP>Chosen you have { holiday.destination.name }, travel you will { holiday.modeOfTravel.name }, companion you will with { holiday.companion.name }</StyledP>
+          <TextButton onClick={ confirmedAllHandler } btnText="Confirm all, you will?" />
         </> ) : null }
 
       <PrimaryFooter />
-    </>
+    </StyledLargeContainer>
   );
 }
 

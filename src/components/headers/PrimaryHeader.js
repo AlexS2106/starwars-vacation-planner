@@ -1,11 +1,23 @@
 import React from "react";
+import styled from "styled-components";
 
-const PrimaryHeader = () => { 
+import { StyledHeader } from "./Headers.styled";
+
+////** STYLES **////
+const StyledPrimaryHeader = styled(StyledHeader)`
+h1, h2 {
+color: var(--color-light);
+}
+`;
+
+////** COMPONENT **////
+const PrimaryHeader = () => {
+  ////** MARK UP **////
   return (
-    <header>
-      <h1>Yoda's Interstellar Vacations</h1>
-      <h2>For Jedis and Padawans only!</h2>
-    </header>
+      <StyledPrimaryHeader >
+        <h1>Yoda's Galaxial Vacations</h1>
+        <h2>For Jedi, Sith, Padawans And Apprentices</h2>
+      </StyledPrimaryHeader>
   );
 }
 
